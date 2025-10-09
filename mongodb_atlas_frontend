@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>User Management</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f4f6;
+      padding: 30px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    form {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      width: 400px;
+      margin: 0 auto;
+    }
+    input {
+      width: 100%;
+      padding: 8px;
+      margin: 8px 0;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+    .actions button {
+      margin: 0 5px;
+    }
+  </style>
+</head>
+<body>
+  <h1>👤 User Management App</h1>
+
+  <form id="userForm">
+    <input type="text" id="name" placeholder="Enter Name" required />
+    <input type="email" id="email" placeholder="Enter Email" required />
+    <input type="number" id="age" placeholder="Enter Age" required />
+    <button type="submit">Add User</button>
+  </form>
+
+  <h2>📋 All Users</h2>
+  <table id="usersTable">
+    <thead>
+      <tr>
+        <th>Name</th><th>Email</th><th>Age</th><th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const apiUrl = "http://localhost:3000/users";
+
+    // Fetch all users
+    async function fetchUsers() {
+      const res = await fetch(apiUrl);
+      const users = await res.json();
+      const tbody = document.querySelector("#usersTable tbody");
+      tbody.innerHTML = "";
+      users.forEach(u => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${u.name}</td>
+          <td>${u.email}</td>
+          <td>${u.age}</td>
+          <td class="actions">
+            <button onclick="deleteUser('${u._id}')">Delete</button>
+            <button onclick="editUser('${u._id}', '${u.name}', '${u.email}', ${u.age})">Edit</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Add new user
+    document.getElementById("userForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const user = {
+        name: document.getElementById("name").value,
+        email: document.getElementById("email").value,
+        age: document.getElementById("age").value
+      };
+      await fetch(apiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user)
+      });
+      e.target.reset();
+      fetchUsers();
+    });
+
+    // Delete user
+    async function deleteUser(id) {
+      await fetch(`http://localhost:3000/delete/${id}`, { method: "DELETE" });
+      fetchUsers();
+    }
+
+    // Edit user
+    async function editUser(id, name, email, age) {
+      const newName = prompt("Enter new name:", name);
+      const newEmail = prompt("Enter new email:", email);
+      const newAge = prompt("Enter new age:", age);
+      if (newName && newEmail && newAge) {
+        await fetch(`http://localhost:3000/update/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: newName, email: newEmail, age: newAge })
+        });
+        fetchUsers();
+      }
+    }
+
+    // Initial load
+    fetchUsers();
+  </script>
+</body>
+</html>
