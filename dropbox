@@ -1,0 +1,33 @@
+#pip install dropbox
+
+import dropbox
+
+# 🔑 Paste your access token here
+ACCESS_TOKEN = "place your access token here"
+
+# Initialize Dropbox client
+dbx = dropbox.Dropbox(ACCESS_TOKEN)
+
+# Function to upload file
+def upload_file(local_path, dropbox_path):
+    with open(local_path, 'rb') as f:
+        dbx.files_upload(f.read(), dropbox_path, mode=dropbox.files.WriteMode.overwrite)
+    print(f"✅ Uploaded '{local_path}' to Dropbox as '{dropbox_path}'")
+
+# Function to download file
+def download_file(dropbox_path, local_path):
+    metadata, res = dbx.files_download(path=dropbox_path)
+    with open(local_path, 'wb') as f:
+        f.write(res.content)
+    print(f"⬇️ Downloaded '{dropbox_path}' from Dropbox to '{local_path}'")
+
+# Example usage
+if __name__ == "__main__":
+    # Example 1: Upload photo.jpg from local folder to Dropbox root
+    upload_file("photo.jpg", "/photo.jpg")
+
+    # Example 2: Upload a PDF
+    upload_file("resume.pdf", "/resume.pdf")
+
+    # Example 3: Download one back
+    download_file("/photo.jpg", "downloaded_photo.jpg")
