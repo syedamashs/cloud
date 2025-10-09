@@ -1,0 +1,386 @@
+sudo apt update
+sudo apt install python3
+sudo apt install -y qq mpich
+sudo apt install python3-pip
+
+sudo apt install libopenmpi-dev openmpi-bin
+
+pip install mpi4py
+
+gedit mpi_example.py
+
+Code:
+
+
+
+
+mpirun --oversubscribe -np 4 python3 mpi_example.py​
+
+
+-----------OPENMPI-------
+
+sudo apt-get install libomp-dev​
+
+
+gedit hello.cpp​
+g++ -fopenmp hello.cpp -o hello.out​
+./hello.out​
+
+gedit loopparallel.cpp​
+g++ -fopenmp loopparallel.cpp -o loopparallel.out​
+./loopparallel.out​
+
+gedit priv.cpp
+g++ -fopenmp priv.cpp -o priv.out​
+./priv.out​
+
+gedit firstpriv.cpp
+g++ -fopenmp firstpriv.cpp -o firstpriv.out​
+./firstpriv.out​
+
+gedit secpriv.cpp
+g++ -fopenmp secpriv.cpp -o secpriv.out​
+./secpriv.out
+
+gedit thirdpriv.cpp
+g++ -fopenmp thirdpriv.cpp -o thirdpriv.out​
+./thirdpriv.out
+
+
+
+
+Codes
+
+
+Python MPI (mpiexample.py):
+
+python
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+print(f"Hello from process {rank} out of {size}")
+OpenMP Hello World (hello.cpp):
+cpp
+#include <omp.h>
+#include <iostream>
+int main() {
+    omp_set_num_threads(4);
+    #pragma omp parallel
+    {
+        int threadid = omp_get_thread_num();
+        int totalthreads = omp_get_num_threads();
+        std::cout << "Hello World from thread " << threadid << " out of " << totalthreads << " threads." << std::endl;
+    }
+    return 0;
+}
+
+
+OpenMP Parallel Sum (loopparallel.cpp):
+cpp
+#include <omp.h>
+#include <iostream>
+#include <chrono>
+#define THREADCOUNT 5
+using namespace std;
+
+int serialsum(int n) {
+    int sum = 0;
+    for (int i = 1; i < n; i++)
+        sum += i;
+    return sum;
+}
+
+int parallelsum(int n) {
+    int sum = 0;
+    #pragma omp parallel for reduction(+:sum)
+    for (int i = 1; i < n; i++)
+        sum += i;
+    return sum;
+}
+
+
+int main(int argc, char *argv[]) {
+    omp_set_num_threads(THREADCOUNT);
+    int n = 100000000;
+    auto starttime1 = chrono::high_resolution_clock::now();
+    int sersum = serialsum(n);
+    auto endtime1 = chrono::high_resolution_clock::now();
+    chrono::duration<double> duration1 = endtime1 - starttime1;
+
+    auto starttime2 = chrono::high_resolution_clock::now();
+    int parsum = parallelsum(n);
+    auto endtime2 = chrono::high_resolution_clock::now();
+    chrono::duration<double> duration2 = endtime2 - starttime2;
+
+    cout << "Serial sum " << sersum << " in " << duration1.count() << " seconds." << endl;
+    cout << "Parallel sum " << parsum << " in " << duration2.count() << " seconds." << endl;
+}
+
+
+OpenMP Private Example (priv.cpp):
+cpp
+#include <omp.h>
+#include <iostream>
+using namespace std;
+int main() {
+    int x = 10;
+    #pragma omp parallel private(x)
+    {
+        cout << "Thread " << omp_get_thread_num() << " at starting has x " << x << endl;
+        x = omp_get_thread_num();
+        cout << "Thread " << omp_get_thread_num() << " after initialization has x " << x << endl;
+    }
+    cout << "Outside parallel region, x " << x << endl;
+}
+
+
+OpenMP Firstprivate Example (firstpriv.cpp):
+cpp
+#include <omp.h>
+#include <iostream>
+using namespace std;
+int main() {
+    int x = 10;
+    #pragma omp parallel firstprivate(x)
+    {
+        cout << "Thread " << omp_get_thread_num() << " starts with x " << x << endl;
+        x = omp_get_thread_num() + 10;
+        cout << "Thread " << omp_get_thread_num() << " ends with x " << x << endl;
+    }
+    cout << "Outside parallel region, x " << x << endl;
+}
+
+
+OpenMP Lastprivate Example (secpriv.cpp):
+cpp
+#include <omp.h>
+#include <iostream>
+using namespace std;
+int main() {
+    int x = 10;
+    #pragma omp parallel for lastprivate(x)
+    for (int i = 0; i < 4; i++) {
+        x = i;
+        cout << "Thread " << omp_get_thread_num() << " working on iteration " << i << " sets x " << x << endl;
+    }
+    cout << "Outside parallel region, x " << x << endl;
+}
+
+
+OpenMP Critical Section Example:
+cpp
+#include <omp.h>
+#include <iostream>
+using namespace std;
+int main() {
+    int totalsum = 0;
+    #pragma omp parallel for
+    for (int i = 0; i < 1000; i++) {
+        int localsum = i;
+        #pragma omp critical
+        {
+            totalsum += localsum;
+        }
+    }
+    cout << "Total sum " << totalsum << endl;
+
+
+
+
+
+
+
+
+
+--------------------------------------------------------
+
+
+ MPI BASICS (in Python)
+
+
+(1) Hello World
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+
+print(f"Hello from process {rank} out of {size}")
+
+
+👉 Each process prints its own rank (like thread ID).
+
+Run with:
+
+mpirun --oversubscribe -np 4 python3 mpi_example.py
+
+
+(2) Even-Odd Check (per process)
+
+Each process checks if its rank is even or odd.
+
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+if rank % 2 == 0:
+    print(f"Process {rank}: Even")
+else:
+    print(f"Process {rank}: Odd")
+
+
+(3) Prime Check (simple computation per process)
+from mpi4py import MPI
+
+def is_prime(n):
+    if n < 2: return False
+    for i in range(2, int(n**0.5)+1):
+        if n % i == 0: return False
+    return True
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+num = 10 + rank   # each process checks a different number
+print(f"Process {rank}: {num} is {'Prime' if is_prime(num) else 'Not Prime'}")
+
+
+(4) Sum using communication
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+
+local = rank + 1   # each process contributes its rank+1
+total = comm.reduce(local, op=MPI.SUM, root=0)
+
+if rank == 0:
+    print("Total sum =", total)
+
+
+👉 reduce() collects results from all processes and combines them (here: sum).
+
+
+(5) Perfect Number Check
+from mpi4py import MPI
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+num = 6 + rank
+divsum = sum([i for i in range(1, num) if num % i == 0])
+
+if divsum == num:
+    print(f"Process {rank}: {num} is Perfect")
+else:
+    print(f"Process {rank}: {num} is Not Perfect")
+
+
+✅ MPI Summary
+
+rank → unique ID of each process
+
+size → total number of processes
+
+reduce → gather results
+
+bcast → broadcast to all
+
+scatter/gather → split/collect data
+
+For exams, mostly “Hello”, “Prime”, “Perfect”, or “Sum” type questions.
+
+
+
+
+------------
+OPENMP BASICS (in C++)
+
+For shared-memory multithreading, focus on:
+
+#pragma omp parallel
+
+omp_get_thread_num()
+
+omp_set_num_threads(n)
+
+#pragma omp for, private, firstprivate, critical
+
+(1) Hello World
+#include <omp.h>
+#include <iostream>
+using namespace std;
+int main() {
+    #pragma omp parallel
+    {
+        int id = omp_get_thread_num();
+        cout << "Hello from thread " << id << endl;
+    }
+}
+
+(2) Sum of Numbers
+#include <omp.h>
+#include <iostream>
+using namespace std;
+int main() {
+    int n = 1000;
+    int sum = 0;
+    #pragma omp parallel for reduction(+:sum)
+    for (int i = 1; i <= n; i++)
+        sum += i;
+    cout << "Sum = " << sum << endl;
+}
+
+(3) Prime Number Check (parallelized)
+#include <omp.h>
+#include <iostream>
+using namespace std;
+
+bool isPrime(int n) {
+    if (n < 2) return false;
+    for (int i = 2; i * i <= n; i++)
+        if (n % i == 0) return false;
+    return true;
+}
+
+int main() {
+    #pragma omp parallel for
+    for (int num = 2; num <= 20; num++) {
+        if (isPrime(num))
+            cout << "Thread " << omp_get_thread_num() << " found prime: " << num << endl;
+    }
+}
+
+(4) Perfect Number
+#include <omp.h>
+#include <iostream>
+using namespace std;
+
+int main() {
+    #pragma omp parallel for
+    for (int n = 2; n <= 30; n++) {
+        int sum = 0;
+        for (int i = 1; i < n; i++)
+            if (n % i == 0) sum += i;
+        if (sum == n)
+            cout << "Thread " << omp_get_thread_num() << " found perfect: " << n << endl;
+    }
+}
+
+(5) Critical Section Example
+#include <omp.h>
+#include <iostream>
+using namespace std;
+int main() {
+    int total = 0;
+    #pragma omp parallel for
+    for (int i = 1; i <= 100; i++) {
+        #pragma omp critical
+        {
+            total += i;
+        }
+    }
+    cout << "Final sum: " << total << endl;
+}
