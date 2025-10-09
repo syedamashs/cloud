@@ -1,1 +1,8 @@
 sudo apt update
+sudo apt install openjdk-11-jdk -y
+
+sudo adduser hadoop
+sudo usermod -aG sudo hadoop
+su - hadoop
+
+sudo wget https://dlcdn.apache.org/hadoop/common/hadoop-3.3.6/hadoop-3.3.6.tar.gz
